@@ -56,7 +56,18 @@ sim_inversion <- function (out, proc_inputs) {
         forms[[2]] <- `lhs<-`(forms[[2]], c(LHS_Z[rank(order[seq_len(dZ)])],
                                             LHS_Y[rank(order[dZ+dX+seq_len(i-1 - dZ-dX)])]))
       }
-
+      
+      ## code to rescale qU
+      U <- as.numeric(out[[LHS_Z[1]]])
+      if (estimand == "att"){
+        qU <- ecdf(U[out[LHS_X]==1])(U)
+        quantiles[LHS_Z[1]] <- qU
+      }
+      if (estimand == "atc"){
+        qU <- ecdf(U[out[LHS_X]==0])(U)
+        quantiles[LHS_Z[1]] <- qU
+      }
+      
       out <- sim_variable(n=nrow(out), formulas=forms, family=fams, pars=prs,
                           link=lnk, dat=out, quantiles=quantiles)
       quantiles <- attr(out, "quantiles")

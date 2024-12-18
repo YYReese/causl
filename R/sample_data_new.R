@@ -122,7 +122,7 @@ rfrugal <- function (n, causl_model, control=list()) {
 ##' @describeIn rfrugal old function for simulation
 ##' @export
 rfrugalParam <- function(n, formulas = list(list(z ~ 1), list(x ~ z), list(y ~ x), list( ~ 1)),
-                       family = c(1,1,1,1), pars, link=NULL, dat=NULL,
+                       family = c(1,1,1,1), pars, link=NULL, dat=NULL, estimand="ate",
                        method="inversion", control=list(), ...) {
 
   # get control parameters or use defaults
@@ -146,7 +146,8 @@ rfrugalParam <- function(n, formulas = list(list(z ~ 1), list(x ~ z), list(y ~ x
 
   ## process the four main arguments
   proc_inputs <- process_inputs(formulas=formulas, family=family, pars=pars,
-                                link=link, dat=dat, kwd=kwd, method=method)
+                                link=link, dat=dat, estimand=estimand,
+                                kwd=kwd, method=method)
 
   out <- rfrugal(n=n, causl_model=proc_inputs, control=con)
 

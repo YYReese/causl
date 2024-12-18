@@ -8,7 +8,7 @@
 ##' @details Function that processes and checks the validity of the main arguments
 ##' used for simulating data.
 ##'
-process_inputs <- function (formulas, family, pars, link, dat, kwd, method="inversion") {
+process_inputs <- function (formulas, family, pars, link, dat, estimand, kwd, method="inversion") {
 
   ## process univariate formulas and obtain dimensions of model
   formulas <- process_formulas(formulas)
@@ -82,9 +82,15 @@ process_inputs <- function (formulas, family, pars, link, dat, kwd, method="inve
 
   ## set up link functions
   link <- link_setup(link, family[1:3], vars=LHSs)
+  
+  ## check estimand is supported
+  if (estimand != "ate" & estimand != "ate" & 
+      estimand != "att" & estimand != "ato"){
+    stop ("'estimand' should be \"ate\", \"att\", \"atc\" or \"ato\"")
+  }
 
   caus_mod <- list(formulas=formulas, family=family, pars=pars, link=link,
-                   dat=dat, LHSs=list(LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
+                   dat=dat, estimand=estimand, LHSs=list(LHS_Z=LHS_Z, LHS_X=LHS_X, LHS_Y=LHS_Y),
                    quantiles=quantiles, kwd=kwd, dim=dims[1:3], vars=vars, #output=output,
                    order=ord, method=method)
   class(caus_mod) <- "causl_model"
