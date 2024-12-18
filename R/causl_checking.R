@@ -53,16 +53,16 @@ causl_checking <- function(n, formulas = forms, family = fams,
   dato$wt <- wt
   modY <- glm(Y_form, family=Y_fam, weights=wt, data=dato) 
   
-  ate_correct <- modY$coefficients[2] # ate estimate
-  seY <- sqrt(diag(sandwich::sandwich(modY)))[2] # ate standard error estimate
+  est_correct <- modY$coefficients[2] # estimand estimate
+  seY <- sqrt(diag(sandwich::sandwich(modY)))[2] # standard error estimate
   
   # Unweighted (biased) model for ATE
   modYw <- glm(Y_form, family=Y_fam, data=dato) 
-  ate_biased <- modYw$coefficients[2] # ate biased estimate
+  est_biased <- modYw$coefficients[2] # estimand biased estimate
   seY_biased <- sqrt(diag(sandwich::sandwich(modYw)))[2] 
   
-  return(list(correct = list(ate=ate_correct, se=seY),
-              biased = list(ate = ate_biased, se=seY_biased)))
+  return(list(correct = list(estimand=est_correct, se=seY),
+              biased = list(estimand = est_biased, se=seY_biased)))
 }
 
 # Example
