@@ -84,7 +84,7 @@ process_inputs <- function (formulas, family, pars, link, dat, estimand, kwd, me
   link <- link_setup(link, family[1:3], vars=LHSs)
   
   ## check estimand is supported
-  if (estimand != "ate" & estimand != "ate" & 
+  if (estimand != "ate" & estimand != "atc" & 
       estimand != "att" & estimand != "ato"){
     stop ("'estimand' should be \"ate\", \"att\", \"atc\" or \"ato\"")
   }
