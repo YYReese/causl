@@ -29,7 +29,22 @@ causl_checking <- function(n, formulas = forms, family = fams,
   X_fam <- family_vals$family[family_vals$val == family[[2]]]
   modX <- glm(X_form, family=X_fam, data=dato) 
   ps <- predict(modX, type = "response") 
-  wt <- dato$X/ps + (1-dato$X)/(1-ps) # weights for ATE
+  if (estimand == "ate"){
+    # weights for ATE (1/ps for the treated, 1/(1-ps) for the controlled)
+    wt <- dato$X/ps + (1-dato$X)/(1-ps) # weights for ATE
+  }
+  else if (estimand == "att"){
+    # weights for ATT (1 for the treated, ps/(1-ps) for the controlled)
+    wt <- dato$X + (1-dato$X)*ps/(1-ps) 
+  }
+  else if (estimand == "atc"){
+    # weights for ATC (1 for the treated, ps/(1-ps) for the controlled)
+    wt <- dato$X + (1-dato$X)*ps/(1-ps) 
+  }
+  else { 
+    # weights for ATO (1-ps for the treated, ps for the controlled)
+    wt <- dato$X *(1-ps) + (1-dato$X)*ps
+  }
   
   # Correct model for ATE
   # simplest case here, Y is 1-dim outcome set 
