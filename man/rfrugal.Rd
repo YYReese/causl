@@ -14,6 +14,7 @@ rfrugalParam(
   pars,
   link = NULL,
   dat = NULL,
+  estimand = "ate",
   method = "inversion",
   control = list(),
   ...
@@ -35,6 +36,8 @@ rfrugalParam(
 \item{link}{list of link functions}
 
 \item{dat}{optional data frame of covariates}
+
+\item{estimand}{either \code{"ate"} (the default), \code{"att"}, \code{"att"}, or \code{"ato"}}
 
 \item{method}{either \code{"inversion"} (the default), \code{"inversion_mv"}, or \code{"rejection"}}
 
