@@ -14,6 +14,7 @@ sim_inversion <- function (out, proc_inputs) {
   pars <- proc_inputs$pars
   family <- proc_inputs$family
   link <- proc_inputs$link
+  estimand <- proc_inputs$estimand
   dZ <- proc_inputs$dim[1]; dX <- proc_inputs$dim[2]; dY <- proc_inputs$dim[3]
   LHS_Z <- proc_inputs$LHSs$LHS_Z; LHS_X <- proc_inputs$LHSs$LHS_X; LHS_Y <- proc_inputs$LHSs$LHS_Y; kwd <- proc_inputs$kwd
   famZ <- proc_inputs$family[[1]]; famX <- proc_inputs$family[[2]]; famY <- proc_inputs$family[[3]]; famCop <- proc_inputs$family[[4]]
