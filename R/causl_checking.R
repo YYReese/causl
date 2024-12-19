@@ -34,12 +34,12 @@ causl_checking <- function(n, formulas = forms, family = fams,
     wt <- dato$X/ps + (1-dato$X)/(1-ps) # weights for ATE
   }
   else if (estimand == "att"){
-    # weights for ATT (1 for the treated, ps/(1-ps) for the controlled)
+    # weights for ATT (1 for the treated, (1-ps)/ps for the controlled)
     wt <- dato$X + (1-dato$X)*ps/(1-ps) 
   }
   else if (estimand == "atc"){
-    # weights for ATC (1 for the treated, ps/(1-ps) for the controlled)
-    wt <- dato$X + (1-dato$X)*ps/(1-ps) 
+    # weights for ATC ((1-ps)/ps for the treated, 1 for the controlled)
+    wt <- dato$X*(1-ps)/ps + (1-dato$X)
   }
   else { 
     # weights for ATO (1-ps for the treated, ps for the controlled)
