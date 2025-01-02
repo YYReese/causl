@@ -62,14 +62,28 @@ sim_inversion <- function (out, proc_inputs) {
       U <- as.numeric(out[[LHS_Z[1]]])
       if (estimand == "att"){
         qU <- ecdf(U[out[LHS_X]==1])(U)
-        quantiles[LHS_Z[1]] <- qU
+        quantiles[LHS_Z[1]] <- pmin(qU, 1)
       }
       else if (estimand == "atc"){
         qU <- ecdf(U[out[LHS_X]==0])(U)
-        quantiles[LHS_Z[1]] <- qU
+        quantiles[LHS_Z[1]] <- pmin(qU, 1)
       }
       else if (estimand == "ato"){
-        qU <- ecdf(U[out[LHS_X]==0])(U)
+        # Fit the propensity score model dynamically 
+        ps_mod <- glm(formulas[[2]][[1]], family = binomial, data = out) # X~Z+U, for dX=1 only 
+        ps <- predict(ps_mod, type = "response")
+        
+        # Calculate overlap weights
+        overlap_weights <- ps * (1 - ps)
+        overlap_weights <- overlap_weights / sum(overlap_weights)  # normalize
+        
+        # Compute weighted ecdf
+        ord <- order(U)  # sorting order for U
+        U_sorted <- U[ord]  # sort U
+        weights_sorted <- overlap_weights[ord]  # sort weights in the same order
+        cum_weights <- cumsum(weights_sorted) # cumulative weights
+        qU <- approx(U_sorted, cum_weights, xout=U, method="linear", rule=2)$y
+        quantiles[LHS_Z[1]] <- pmin(qU, 1) # correcting rounding errors. e.g.1.000e+00>1
       }
       
       out <- sim_variable(n=nrow(out), formulas=forms, family=fams, pars=prs,

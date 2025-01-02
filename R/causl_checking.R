@@ -29,6 +29,8 @@ causl_checking <- function(n, formulas = forms, family = fams,
   X_fam <- family_vals$family[family_vals$val == family[[2]]]
   modX <- glm(X_form, family=X_fam, data=dato) 
   ps <- predict(modX, type = "response") 
+  # Trim extreme propensity scores to avoid instability
+  ps <- pmax(pmin(ps, 0.99), 0.01) 
   if (estimand == "ate"){
     # weights for ATE (1/ps for the treated, 1/(1-ps) for the controlled)
     wt <- dato$X/ps + (1-dato$X)/(1-ps) # weights for ATE
@@ -43,7 +45,8 @@ causl_checking <- function(n, formulas = forms, family = fams,
   }
   else { 
     # weights for ATO (1-ps for the treated, ps for the controlled)
-    wt <- dato$X *(1-ps) + (1-dato$X)*ps
+    wt <- (1-ps)*ps
+    wt <- wt/sum(wt)
   }
   
   # Correct model for ATE
