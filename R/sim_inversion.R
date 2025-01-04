@@ -62,11 +62,11 @@ sim_inversion <- function (out, proc_inputs) {
       U <- as.numeric(out[[LHS_Z[1]]])
       if (estimand == "att"){
         qU <- ecdf(U[out[LHS_X]==1])(U)
-        quantiles[LHS_Z[1]] <- pmin(qU, 1)
+        quantiles[LHS_Z[1]] <- qU
       }
       else if (estimand == "atc"){
         qU <- ecdf(U[out[LHS_X]==0])(U)
-        quantiles[LHS_Z[1]] <- pmin(qU, 1)
+        quantiles[LHS_Z[1]] <- qU
       }
       else if (estimand == "ato"){
         # Fit the propensity score model dynamically 

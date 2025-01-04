@@ -28,7 +28,8 @@ causl_checking <- function(n, formulas = forms, family = fams,
   X_form <- formulas[[2]]
   X_fam <- family_vals$family[family_vals$val == family[[2]]]
   modX <- glm(X_form, family=X_fam, data=dato) 
-  ps <- predict(modX, type = "response") 
+  ps <- predict(modX, type = "response")
+  
   # Trim extreme propensity scores to avoid instability
   ps <- pmax(pmin(ps, 0.99), 0.01) 
   if (estimand == "ate"){
@@ -36,7 +37,7 @@ causl_checking <- function(n, formulas = forms, family = fams,
     wt <- dato$X/ps + (1-dato$X)/(1-ps) # weights for ATE
   }
   else if (estimand == "att"){
-    # weights for ATT (1 for the treated, (1-ps)/ps for the controlled)
+    # weights for ATT (1 for the treated, ps/(1-ps) for the controlled)
     wt <- dato$X + (1-dato$X)*ps/(1-ps) 
   }
   else if (estimand == "atc"){
@@ -44,11 +45,10 @@ causl_checking <- function(n, formulas = forms, family = fams,
     wt <- dato$X*(1-ps)/ps + (1-dato$X)
   }
   else { 
-    # weights for ATO (1-ps for the treated, ps for the controlled)
+    # weights for ATO ((1-ps)*ps for both)
     wt <- (1-ps)*ps
     wt <- wt/sum(wt)
   }
-  
   # Correct model for ATE
   # simplest case here, Y is 1-dim outcome set 
   Y_form <- formulas[[3]]
