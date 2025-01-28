@@ -19,9 +19,9 @@ sim_inversion <- function (out, proc_inputs) {
   LHS_Z <- proc_inputs$LHSs$LHS_Z; LHS_X <- proc_inputs$LHSs$LHS_X; LHS_Y <- proc_inputs$LHSs$LHS_Y; kwd <- proc_inputs$kwd
   famZ <- proc_inputs$family[[1]]; famX <- proc_inputs$family[[2]]; famY <- proc_inputs$family[[3]]; famCop <- proc_inputs$family[[4]]
   # dC <-
-
+  
   vars <- proc_inputs$vars
-
+  
   ## get quantiles, if any available
   if (is.null(proc_inputs$quantiles)) {
     quantiles <- out
@@ -29,68 +29,55 @@ sim_inversion <- function (out, proc_inputs) {
   else {
     quantiles <- cbind(proc_inputs$quantiles, out[vars])
   }
-
-
+  
+  
   ## code to get causal order
   order <- proc_inputs$order
-
+  
   ## sample size
   n <- nrow(out)
-
+  
   for (i in seq_along(order)) {
     vnm <- vars[order[i]]
-
+    
     ## code to get Y quantiles conditional on different Zs
     if (order[i] > dZ+dX) {
       ## simulate Y variable
       # qY <- runif(n)
       wh <- order[i] - dZ - dX
       # print(wh)
-
+      
       ## code to use sim_variable
       forms <- list(formulas[[3]][[wh]], formulas[[4]][[wh]])
       fams <- list(family[[3]][[wh]], family[[4]][[wh]])
       prs <- list(pars[[vnm]], pars[[kwd]][[vnm]])
       lnk <- list(link[[3]][wh], list()) # link[[4]][[wh]])
-
+      
       if (any(is.na(lhs(forms[[2]])))) {
         forms[[2]] <- `lhs<-`(forms[[2]], c(LHS_Z[rank(order[seq_len(dZ)])],
                                             LHS_Y[rank(order[dZ+dX+seq_len(i-1 - dZ-dX)])]))
       }
       
       ## code to rescale qU for different estimands
-      U <- as.numeric(out[[LHS_Z[1]]])
+      #U <- as.numeric(out[[LHS_Z[1]]])
       if (estimand == "att"){
-        qU <- ecdf(U[out[LHS_X]==1])(U)
-        quantiles[LHS_Z[1]] <- qU
+        #qU <- ecdf(U[out[LHS_X]==1])(U)
+        #quantiles[LHS_Z[1]] <- qU
+        quantiles[LHS_Z] <- scaled_qZs
       }
       else if (estimand == "atc"){
         qU <- ecdf(U[out[LHS_X]==0])(U)
         quantiles[LHS_Z[1]] <- qU
       }
       else if (estimand == "ato"){
-        # Fit the propensity score model dynamically 
-        ps_mod <- glm(formulas[[2]][[1]], family = binomial, data = out) # X~Z+U, for dX=1 only 
-        ps <- predict(ps_mod, type = "response")
-        
-        # Calculate overlap weights
-        overlap_weights <- ps * (1 - ps)
-        overlap_weights <- overlap_weights / sum(overlap_weights)  # normalize
-        
-        # Compute weighted ecdf
-        ord <- order(U)  # sorting order for U
-        U_sorted <- U[ord]  # sort U
-        weights_sorted <- overlap_weights[ord]  # sort weights in the same order
-        cum_weights <- cumsum(weights_sorted) # cumulative weights
-        qU <- approx(U_sorted, cum_weights, xout=U, method="linear", rule=2)$y
-        quantiles[LHS_Z[1]] <- pmin(qU, 1) # correcting rounding errors. e.g.1.000e+00>1
+        # to do
       }
       
       out <- sim_variable(n=nrow(out), formulas=forms, family=fams, pars=prs,
                           link=lnk, dat=out, quantiles=quantiles)
       quantiles <- attr(out, "quantiles")
       attr(out, "quantiles") <- NULL
-
+      
       # out[[vars[order[i]]]] <- sim_Y(n, formulas=formulas[[4]][[wh]],
       #                                family=family[[4]][[wh]],
       #                                pars=pars[[kwd]][[wh]],
@@ -99,7 +86,7 @@ sim_inversion <- function (out, proc_inputs) {
       #                                parsY=pars[[LHS_Y[wh]]],
       #                                linkY=link[[3]][wh], qZ=quantiles, vars=vars,
       #                                dat=out)
-
+      
       # for (j in seq_len(dZ)) {
       #   curr_qZ <- qZs[[vars[j]]]
       #   X <- model.matrix(formulas[[4]][[wh]][[j]], data=out)
@@ -118,71 +105,51 @@ sim_inversion <- function (out, proc_inputs) {
     else {
       ## code to simulate Z and X variables in causal order
       curr_link <- unlist(link)[order[i]]
-
-      if (vnm %in% LHS_X) {
-        curr_form <- formulas[[2]][[order[i]-dZ]]
-        curr_fam <- famX[[order[i]-dZ]]
-      }
-      else {
+      
+      if (vnm %in% LHS_Z) {
+        print("simulating Zs")
         curr_form <- formulas[[1]][[order[i]]]
         curr_fam <- famZ[[order[i]]]
-      }
-      trm <- terms(curr_form)
-      # curr_form2 <- delete.response(terms(curr_form))
-      MM <- model.matrix(delete.response(trm), data=out)
-      if (nrow(MM) != nrow(out)) {
-        if (length(attr(trm, "factors")) == 0) {
-          if (attr(trm, "intercept") == 1) MM <- matrix(1, nrow=nrow(out), ncol=1)
-          else MM <- matrix(0, nrow=nrow(out), ncol=0)
+        
+        trm <- terms(curr_form)
+        # curr_form2 <- delete.response(terms(curr_form))
+        MM <- model.matrix(delete.response(trm), data=out)
+        if (nrow(MM) != nrow(out)) {
+          if (length(attr(trm, "factors")) == 0) {
+            if (attr(trm, "intercept") == 1) MM <- matrix(1, nrow=nrow(out), ncol=1)
+            else MM <- matrix(0, nrow=nrow(out), ncol=0)
+          }
+          else warning(paste0("Missing entries for ", vnm))
         }
-        else warning(paste0("Missing entries for ", vnm))
+        eta <- MM %*% pars[[vnm]]$beta
+        oth_pars <- pars[[vnm]]
+        curr_phi <- pars[[vnm]]$phi
+        tmp <- glm_sim(family=curr_fam, eta=eta, phi=curr_phi, other_pars=pars[[vnm]], link=curr_link)
+        if (vnm %in% LHS_Z) quantiles[[vnm]] <- attr(tmp, "quantile")
+        attr(tmp, "quantile") <- NULL
+        out[[vnm]] <- tmp
       }
-      eta <- MM %*% pars[[vnm]]$beta
-      oth_pars <- pars[[vnm]]
-      curr_phi <- pars[[vnm]]$phi
-      tmp <- glm_sim(family=curr_fam, eta=eta, phi=curr_phi, other_pars=pars[[vnm]], link=curr_link)
-      if (vnm %in% LHS_Z) quantiles[[vnm]] <- attr(tmp, "quantile")
-      attr(tmp, "quantile") <- NULL
-      out[[vnm]] <- tmp
+      else{
+        print("Simulating X")
+        # X_curr_form <- formulas[[2]][[order[i]-dZ]]
+        # X_fam <- famX[[order[i]-dZ]][[1]] 
+        X_fam <- "logistic" # now simply set as logistic distribution
+        # copX_fam <- famX[[order[i]-dZ]][[2]]
+        # copX_fam <- famCop[[1]]
+        copX_fam <- 1
+        X_res <- sim_cX(n, family=list(X_fam,copX_fam), 
+                        pars= list(list(beta=0,phi=1), list(0.5,0.2)),
+                        dat=out[LHS_Z], quantiles=quantiles[LHS_Z])
+        #e.g.pars=list(list(beta=0, phi=1), list(0.5,0.2,0.4))
+        out[[vnm]] <- X_res$X_samples
+        scaled_qZs <- X_res$scaled_qZs
+        
+      }
     }
   }
-
+  
   attr(out, "qZ") <- quantiles
-
+  
   return(out)
 }
 
-# ##' Generate outcome data by inversion
-# ##'
-# ##' @param n number of samples
-# ##' @param formulas list of formulae for copula parameters
-# ##' @param family vector of integers for distributions of variables
-# ##' @param pars vector of parameters for copula
-# ##' @param formY formulae for response variable
-# ##' @param famY family for response variable
-# ##' @param parsY regression parameters for response variable
-# ##' @param linkY link function for response variable
-# ##' @param qZ quantiles of covariate distribution
-# ##' @param vars character vector of variable names
-# ##' @param dat data frame containing variables in `formulas` and `formY`
-# ##'
-# sim_Y <- function(n, formulas, family, pars, formY, famY, parsY, linkY, qZ, vars, dat) {
-#
-#   qY <- runif(nrow(qZ))  # uniform quantiles
-#
-#   for (j in seq_along(formulas)) {
-#     ## for each Z variable
-#     quZ <- qZ[[vars[j]]]
-#     X <- model.matrix(delete.response(terms(formulas[[j]])), data=dat)  ## covariates matrix
-#     # curr_fam <- family[j]
-#     # curr_par <- pars[[j]]
-#     # eta <- X %*% curr_par
-#     qY <- rescale_cop(cbind(quZ,qY), X=X, beta=pars[[j]]$beta, family=family[j],
-#                      par2=pars[[j]]$par2) #, link=link[j])
-#   }
-#   ##
-#   X <- model.matrix(formY, data=dat)
-#   qY <- rescale_var(qY, X=X, family=famY, pars=parsY, link=linkY)
-#
-#   qY
-# }
