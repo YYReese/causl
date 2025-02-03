@@ -48,9 +48,9 @@ sim_inversion <- function (out, proc_inputs) {
       # print(wh)
       
       ## code to use sim_variable
-      forms <- list(formulas[[3]][[wh]], formulas[[4]][[wh]])
-      fams <- list(family[[3]][[wh]], family[[4]][[wh]])
-      prs <- list(pars[[vnm]], pars[[kwd]][[vnm]])
+      forms <- list(formulas[[3]][[wh]], formulas[[4]][[2]][[wh]])
+      fams <- list(family[[3]][[wh]], family[[4]][[2]][[wh]])
+      prs <- list(pars[[vnm]], pars[[kwd]][[2]][[vnm]])
       lnk <- list(link[[3]][wh], list()) # link[[4]][[wh]])
       
       if (any(is.na(lhs(forms[[2]])))) {
@@ -132,13 +132,14 @@ sim_inversion <- function (out, proc_inputs) {
       else{
         print("Simulating X")
         # X_curr_form <- formulas[[2]][[order[i]-dZ]]
-        # X_fam <- famX[[order[i]-dZ]][[1]] 
-        X_fam <- "logistic" # now simply set as logistic distribution
+        X_fam <- famX[[order[i]-dZ]][[1]] 
+        #X_fam <- "logistic" # now simply set as logistic distribution
         # copX_fam <- famX[[order[i]-dZ]][[2]]
-        # copX_fam <- famCop[[1]]
-        copX_fam <- 1
+        copX_fam <- famCop[[1]]
+        #copX_fam <- 1
+        X_pars <- list(pars[[vnm]], pars[[kwd]][[1]])
         X_res <- sim_cX(n, family=list(X_fam,copX_fam), 
-                        pars= list(list(beta=0,phi=1), list(0.5,0.2)),
+                        pars= X_pars,
                         dat=out[LHS_Z], quantiles=quantiles[LHS_Z])
         #e.g.pars=list(list(beta=0, phi=1), list(0.5,0.2,0.4))
         out[[vnm]] <- X_res$X_samples

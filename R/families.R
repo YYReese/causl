@@ -14,8 +14,8 @@ NULL
 ##' @format `family_vals` is a `data.frame` with 9 rows and 2 columns
 ##'
 ##' @export
-family_vals <- data.frame(val=c(0:6,11,10),
-                         family=c("binomial", "gaussian", "t", "Gamma", "beta", "binomial", "lognormal","ordinal","categorical"))
+family_vals <- data.frame(val=c(0:6,11,10,9),
+                         family=c("binomial", "gaussian", "t", "Gamma", "beta", "binomial", "lognormal","ordinal","categorical","logistic"))
 
 ##' @describeIn family_vals Old name
 ##' @format `familyVals` is the same object as `family_vals`
@@ -186,6 +186,25 @@ beta_causl_fam <- function (link) {
               pars=c("mu", "phi"), default=default, link=link)
   class(out) <- "causl_family"
 
+  return(out)
+}
+
+logistic_causl_fam <- function (link) {
+  if (missing(link)) link = "identity"
+  
+  ## write functions
+  dens <- function (x, mu, phi, log=FALSE) dlogis(x, location=mu,scale=phi,log=log)
+  quan <- function (p, mu, phi, log=FALSE) qlogis(p, location=mu, scale=phi,log=log)
+  sim <- function (n, mu, phi, log=FALSE) rlogis(n, location=mu, scale=phi,log=log)
+  probs <- function (x, mu, phi, log=FALSE) plogis(x, location=mu, scale=phi,log=log)
+  
+  default <- function(theta) list(x=0, mu=0, phi=theta, p=0.5)
+  
+  ## define family
+  out <- list(name="logis", ddist=dens, qdist=quan, rdist=sim, pdist=probs,
+              pars=c("mu", "phi"), default=default, link=link)
+  class(out) <- "causl_family"
+  
   return(out)
 }
 
@@ -420,6 +439,8 @@ theta_to_p_cat <- function (theta) {
 
   return(p)
 }
+
+
 
 ##' Obtain list of family functions
 ##'
