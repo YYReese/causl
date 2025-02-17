@@ -517,22 +517,14 @@ check_pars <- function (formulas, family, pars, dummy_dat, LHSs, kwd, dims) {
 ##' @param ord topological ordering
 ##'
 ##' @export
-pair_copula_setup <- function (formulas, family, pars, LHSs, quans, ord, vnm = "Y") {
+pair_copula_setup <- function (formulas, family, pars, LHSs, quans, ord) {
   dims <- lengths(LHSs)
-  if (vnm == "X"){
-    dZ <- dims[length(dims)-1] # dZ
-    dX <- 0 # dummy
-    dY <- last(dims) # dX
-    LHS_Z <- LHSs[[length(LHSs)-1]] # LHS_Z
-    LHS_Y <- LHSs[[length(LHSs)]] # LHS_X
-  }
-  else {
-    dZ <- dims[length(dims)-2]
-    dX <- dims[length(dims)-1]
-    dY <- last(dims)
-    LHS_Z <- LHSs[[length(LHSs)-2]]
-    LHS_Y <- LHSs[[length(LHSs)]]
-  }
+
+  dZ <- dims[length(dims)-2]
+  dX <- dims[length(dims)-1]
+  dY <- last(dims)
+  LHS_Z <- LHSs[[length(LHSs)-2]]
+  LHS_Y <- LHSs[[length(LHSs)]]
   
   nQ <- length(quans)
   
@@ -690,7 +682,7 @@ pair_copula_setup_X <- function (formulas, family, pars, LHSs, quans, ord) {
     if (!setequal(names(pars), LHS_X)) {
       if ("beta" %in% names(pars)) {
         if (length(pars$beta)!= dZ  ){
-          stop("Number of parameter should be equal to the number of covariates.")
+          stop(paste0("Number of coefficients provided for ", LHS_X," does not match number of covariates"))
         }
       }
       else {
